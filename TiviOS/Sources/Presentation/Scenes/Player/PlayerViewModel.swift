@@ -43,7 +43,7 @@ public final class PlayerViewModel: ObservableObject {
         let player = AVPlayer(playerItem: playerItem)
         self.player = player
         
-        // Observe status
+        // Observe loading / playback state
         playerItem.publisher(for: \.status)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in
@@ -129,7 +129,7 @@ public final class PlayerViewModel: ObservableObject {
         
         // 2. Subtitle Tracks
         if let subtitleGroup = asset.mediaSelectionGroup(forMediaCharacteristic: .legible) {
-            subtitleTracks = subtitleGroup.options.filter { $0.mediaType != .characteristic }
+            subtitleTracks = subtitleGroup.options
             selectedSubtitleTrack = player?.currentItem?.currentMediaSelection.selectedMediaOption(in: subtitleGroup)
         }
     }

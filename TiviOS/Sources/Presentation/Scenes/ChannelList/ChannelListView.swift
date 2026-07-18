@@ -232,3 +232,123 @@ struct VODPosterCard: View {
         }
     }
 }
+
+// Category Pill Component
+struct CategoryPill: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .foregroundColor(isSelected ? .white : .gray)
+                .background(
+                    Capsule()
+                        .fill(isSelected ?
+                            AnyShapeStyle(LinearGradient(colors: [Color(hex: "FF007A"), Color(hex: "7928CA")], startPoint: .leading, endPoint: .trailing)) :
+                            AnyShapeStyle(Color.white.opacity(0.05))
+                        )
+                )
+        }
+    }
+}
+
+// Section Header View
+struct SectionHeaderView: View {
+    let title: String
+    
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.white)
+                .padding(.vertical, 6)
+                .padding(.horizontal, 12)
+                .background(Color(hex: "15102A"))
+                .cornerRadius(8)
+            Spacer()
+        }
+        .padding(.vertical, 4)
+        .background(Color(hex: "0F0C20").opacity(0.85))
+    }
+}
+
+// Channel Row Component
+struct ChannelRowView: View {
+    let channel: Channel
+    let currentProgramName: String?
+    let onFavoriteToggle: () -> Void
+    let onPlay: () -> Void
+    
+    var body: some View {
+        Button(action: onPlay) {
+            HStack(spacing: 12) {
+                // Channel Logo
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.05))
+                        .frame(width: 50, height: 50)
+                    
+                    if let logoUrl = channel.logoUrl {
+                        AsyncImage(url: logoUrl) { image in
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                        } placeholder: {
+                            Image(systemName: "tv").foregroundColor(.gray)
+                        }
+                        .frame(width: 44, height: 44)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    } else {
+                        Image(systemName: "tv")
+                            .foregroundColor(.gray)
+                    }
+                }
+                
+                // Channel Details
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(channel.name)
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    
+                    if let currentProgram = currentProgramName {
+                        Text("Şu an: \(currentProgram)")
+                            .font(.caption)
+                            .foregroundColor(Color(hex: "FF007A"))
+                            .lineLimit(1)
+                    } else {
+                        Text(channel.groupTitle)
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                }
+                
+                Spacer()
+                
+                // Favorite Button
+                Button(action: onFavoriteToggle) {
+                    Image(systemName: channel.isFavorite ? "heart.fill" : "heart")
+                        .foregroundColor(channel.isFavorite ? Color(hex: "FF007A") : .gray)
+                        .font(.title3)
+                        .padding(8)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding()
+            .background(Color.white.opacity(0.03))
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.white.opacity(0.05), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
