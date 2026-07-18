@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 
 @MainActor
 public final class PlaylistListViewModel: ObservableObject {
@@ -32,7 +31,7 @@ public final class PlaylistListViewModel: ObservableObject {
     private let manageRecentsUseCase: ManageRecentsUseCase
     private let globalSearchUseCase: GlobalSearchUseCase
     
-    private var cancellables = Set<AnyCancellable>()
+    private var searchTask: Task<Void, Never>?
     
     public init(
         fetchPlaylistsUseCase: FetchPlaylistsUseCase,
@@ -48,22 +47,21 @@ public final class PlaylistListViewModel: ObservableObject {
         self.deletePlaylistUseCase = deletePlaylistUseCase
         self.manageRecentsUseCase = manageRecentsUseCase
         self.globalSearchUseCase = globalSearchUseCase
-        
-        setupSearchBinding()
     }
     
-    private func setupSearchBinding() {
-        $globalSearchQuery
-            .combineLatest($selectedResolution)
-            .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
-            .sink { [weak self] tuple in
-                let query = tuple.0
-                let res = tuple.1
-                Task {
-                    await self?.performGlobalSearch(query: query, resolution: res)
-                }
-            }
-            .store(in: &cancellables)
+    // Task-based debouncing method to replace Combine chain
+    public func search(query: String, resolution: ResolutionFilter? = nil) {
+        searchTask?.cancel()
+        
+        let targetResolution = resolution ?? selectedResolution
+        
+        searchTask = Task {
+            // Debounce for 300ms
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+            
+            await performGlobalSearch(query: query, resolution: targetResolution)
+        }
     }
     
     public func loadPlaylists() async {
