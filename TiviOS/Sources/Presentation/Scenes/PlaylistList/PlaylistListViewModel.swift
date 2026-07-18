@@ -55,13 +55,12 @@ public final class PlaylistListViewModel: ObservableObject {
     private func setupSearchBinding() {
         $globalSearchQuery
             .combineLatest($selectedResolution)
-            .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
+            .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
             .sink { [weak self] tuple in
-                guard let self = self else { return }
                 let query = tuple.0
                 let res = tuple.1
                 Task {
-                    await self.performGlobalSearch(query: query, resolution: res)
+                    await self?.performGlobalSearch(query: query, resolution: res)
                 }
             }
             .store(in: &cancellables)
