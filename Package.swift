@@ -16,7 +16,8 @@ let package = Package(
     targets: [
         .target(
             name: "TiviOS",
-            path: "TiviOS/Sources"
+            path: "TiviOS/Sources",
+            exclude: ["TiviOSApp.swift"]
         ),
         .testTarget(
             name: "TiviOSTests",
