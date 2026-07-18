@@ -1,0 +1,22 @@
+# Xcode
+#
+# Reference: https://github.com/github/gitignore/blob/main/Swift.gitignore
+
+# Build artifacts
+build/
+DerivedData/
+
+# Personal settings
+xcuserdata/
+
+# Architecture architectures
+*.moved-aside
+*.xcuserstate
+
+# Swift Package Manager
+.build/
+
+# Temp files
+.DS_Store
+*.swp
+*.lock
