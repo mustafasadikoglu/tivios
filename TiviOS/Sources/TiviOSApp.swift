@@ -1,5 +1,6 @@
 import SwiftUI
 
+#if !SWIFT_PACKAGE
 @main
 struct TiviOSApp: App {
     @StateObject private var container = DependencyContainer()
@@ -32,3 +33,4 @@ struct TiviOSApp: App {
         }
     }
 }
+#endif
