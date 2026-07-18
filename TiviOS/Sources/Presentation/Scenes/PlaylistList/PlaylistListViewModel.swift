@@ -58,11 +58,11 @@ public final class PlaylistListViewModel: ObservableObject {
         
         let targetResolution = resolution ?? selectedResolution
         
-        // Debounce for 300ms
-        try? await Task.sleep(nanoseconds: 300_000_000)
+        // Debounce for 300ms (explicitly cast to UInt64 to prevent compiler literal conversion issues)
+        try? await Task.sleep(nanoseconds: UInt64(300_000_000))
         
-        // If the ID has changed, a newer search has been triggered, so exit this one.
-        guard self.currentSearchId == newId else { return }
+        // Explicitly unwrap and compare UUIDs to prevent optional type solver errors
+        guard let currentId = self.currentSearchId, currentId == newId else { return }
         
         await self.performGlobalSearch(query: query, resolution: targetResolution)
     }
