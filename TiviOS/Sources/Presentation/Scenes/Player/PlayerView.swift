@@ -106,6 +106,31 @@ public struct PlayerView: View {
                             .scaleEffect(2)
                     }
                     
+                    if let errorMessage = viewModel.errorMessage {
+                        VStack(spacing: 16) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 40))
+                                .foregroundColor(.orange)
+                            
+                            Text(errorMessage)
+                                .font(.callout)
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
+                            
+                            Button {
+                                viewModel.startPlayback()
+                            } label: {
+                                Text("Tekrar Dene")
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 24)
+                                    .padding(.vertical, 10)
+                                    .background(Capsule().fill(themeManager.accentColor))
+                            }
+                        }
+                    }
+                    
                     Spacer()
                     
                     // Bottom Controls Bar

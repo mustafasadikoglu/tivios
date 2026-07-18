@@ -56,10 +56,22 @@ public final class PlayerViewModel: ObservableObject {
                     player.play()
                 case .failed:
                     self.isLoading = false
-                    self.errorMessage = "Yayın yüklenemedi. Akış çevrimdışı veya geçersiz olabilir."
+                    let failureReason = playerItem.error?.localizedDescription ?? "Bilinmeyen hata"
+                    self.errorMessage = "Yayın yüklenemedi: \(failureReason)"
                 default:
                     break
                 }
+            }
+            .store(in: &cancellables)
+        
+        // Observe player error notifications
+        NotificationCenter.default.publisher(for: .AVPlayerItemFailedToPlayToEndTime, object: playerItem)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self = self else { return }
+                let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
+                self.errorMessage = "Akış kesildi: \(error?.localizedDescription ?? "Bağlantı koptu")"
+                self.isPlaying = false
             }
             .store(in: &cancellables)
     }

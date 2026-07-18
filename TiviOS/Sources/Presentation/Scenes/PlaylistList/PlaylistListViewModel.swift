@@ -80,6 +80,26 @@ public final class PlaylistListViewModel: ObservableObject {
     }
     
     public func addPlaylist() async {
+        // Validate inputs
+        guard !newPlaylistName.trimmingCharacters(in: .whitespaces).isEmpty else {
+            errorMessage = "Liste adı boş olamaz."
+            return
+        }
+        
+        if addPlaylistType == .m3u {
+            guard !newPlaylistUrl.trimmingCharacters(in: .whitespaces).isEmpty else {
+                errorMessage = "M3U bağlantı adresi boş olamaz."
+                return
+            }
+        } else {
+            guard !xtreamHost.trimmingCharacters(in: .whitespaces).isEmpty,
+                  !xtreamUsername.trimmingCharacters(in: .whitespaces).isEmpty,
+                  !xtreamPassword.trimmingCharacters(in: .whitespaces).isEmpty else {
+                errorMessage = "Tüm Xtream alanlarını doldurun (sunucu, kullanıcı adı, şifre)."
+                return
+            }
+        }
+        
         isLoading = true
         errorMessage = nil
         do {
@@ -102,7 +122,7 @@ public final class PlaylistListViewModel: ObservableObject {
             showAddPlaylistSheet = false
             await loadPlaylists()
         } catch {
-            errorMessage = "Oynatma listesi eklenemedi: \(error.localizedDescription)"
+            errorMessage = "Bağlantı hatası: \(error.localizedDescription)"
         }
         isLoading = false
     }

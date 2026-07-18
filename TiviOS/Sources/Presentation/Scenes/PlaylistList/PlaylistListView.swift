@@ -412,6 +412,15 @@ struct AddPlaylistSheet: View {
                 .padding(.horizontal)
                 .disabled(viewModel.isLoading)
                 
+                // Error Message Display
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                        .font(.callout)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+                
                 Spacer()
             }
             .padding(.top, 40)
