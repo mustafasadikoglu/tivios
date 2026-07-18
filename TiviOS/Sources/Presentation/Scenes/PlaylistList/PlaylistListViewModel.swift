@@ -52,7 +52,7 @@ public final class PlaylistListViewModel: ObservableObject {
         // Listen to global search changes
         Publishers.CombineLatest($globalSearchQuery, $selectedResolution)
             .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
-            .sink { [weak self] query, res in
+            .sink { [weak self] (query, res) in
                 Task {
                     await self?.performGlobalSearch(query: query, resolution: res)
                 }

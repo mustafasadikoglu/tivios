@@ -94,9 +94,9 @@ public final class PlayerViewModel: ObservableObject {
         volumeLevel = target
         showVolumeHUD = true
         
-        // Hide HUD after 1.5s
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            self?.showVolumeHUD = false
+        Task {
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            self.showVolumeHUD = false
         }
     }
     
@@ -109,8 +109,9 @@ public final class PlayerViewModel: ObservableObject {
         brightnessLevel = target
         showBrightnessHUD = true
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            self?.showBrightnessHUD = false
+        Task {
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            self.showBrightnessHUD = false
         }
         #endif
     }
