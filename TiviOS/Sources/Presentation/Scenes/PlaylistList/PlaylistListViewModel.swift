@@ -32,7 +32,7 @@ public final class PlaylistListViewModel: ObservableObject {
     private let manageRecentsUseCase: ManageRecentsUseCase
     private let globalSearchUseCase: GlobalSearchUseCase
     
-    private var searchTask: Task<Void, Never>?
+    private var searchTask: Task<Void, Error>?
     
     public init(
         fetchPlaylistsUseCase: FetchPlaylistsUseCase,
@@ -50,17 +50,15 @@ public final class PlaylistListViewModel: ObservableObject {
         self.globalSearchUseCase = globalSearchUseCase
     }
     
-    // Task-based debouncing method to replace Combine chain
+    // Task-based debouncing method (modern iOS 16 style)
     public func search(query: String, resolution: ResolutionFilter? = nil) {
         searchTask?.cancel()
         
         let targetResolution = resolution ?? selectedResolution
         
         searchTask = Task {
-            // Debounce for 300ms
-            try? await Task.sleep(nanoseconds: 300_000_000)
-            guard !Task.isCancelled else { return }
-            
+            // Sleep for 300ms. If cancelled, this throws CancellationError and exits the task.
+            try await Task.sleep(for: .seconds(0.3))
             await self.performGlobalSearch(query: query, resolution: targetResolution)
         }
     }
