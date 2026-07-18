@@ -156,3 +156,139 @@ public struct PlayerView: View {
         }
     }
 }
+
+// Custom Video Player Container supporting Gravity
+struct PlayerContainerView: UIViewControllerRepresentable {
+    let player: AVPlayer
+    let videoGravity: AVLayerVideoGravity
+    
+    func makeUIViewController(context: Context) -> AVPlayerViewController {
+        let controller = AVPlayerViewController()
+        controller.player = player
+        controller.showsPlaybackControls = false
+        controller.videoGravity = videoGravity
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {
+        uiViewController.videoGravity = videoGravity
+    }
+}
+
+// Swipe Gesture HUD Indicator Overlay
+struct HUDBare: View {
+    let icon: String
+    let value: CGFloat
+    let title: String
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.largeTitle)
+                .foregroundColor(.white)
+            
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.gray)
+            
+            ProgressView(value: Double(value), total: 1.0)
+                .accentColor(Color(hex: "FF007A"))
+                .frame(width: 120)
+        }
+        .padding()
+        .background(RoundedRectangle(cornerRadius: 16).fill(Color.black.opacity(0.8)))
+    }
+}
+
+// Subtitles & Audio Track Selector Screen
+struct MediaTracksSelectionSheet: View {
+    @ObservedObject var viewModel: PlayerViewModel
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        ZStack {
+            Color(hex: "0F0C20").ignoresSafeArea()
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    Text("Medya Seçenekleri")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .padding(.top)
+                    
+                    // Audio Tracks Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Ses Dili / Kanalı")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                        
+                        if viewModel.audioTracks.isEmpty {
+                            Text("Varsayılan Ses").foregroundColor(.white)
+                        } else {
+                            ForEach(viewModel.audioTracks, id: \.self) { track in
+                                Button {
+                                    viewModel.selectAudioTrack(track)
+                                } label: {
+                                    HStack {
+                                        Text(track.displayName)
+                                            .foregroundColor(.white)
+                                        Spacer()
+                                        if viewModel.selectedAudioTrack == track {
+                                            Image(systemName: "checkmark").foregroundColor(Color(hex: "FF007A"))
+                                        }
+                                    }
+                                    .padding()
+                                    .background(Color.white.opacity(0.05))
+                                    .cornerRadius(8)
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Subtitles Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Altyazılar")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                        
+                        Button {
+                            viewModel.selectSubtitleTrack(nil)
+                        } label: {
+                            HStack {
+                                Text("Altyazı Yok")
+                                    .foregroundColor(.white)
+                                Spacer()
+                                if viewModel.selectedSubtitleTrack == nil {
+                                    Image(systemName: "checkmark").foregroundColor(Color(hex: "FF007A"))
+                                }
+                            }
+                            .padding()
+                            .background(Color.white.opacity(0.05))
+                            .cornerRadius(8)
+                        }
+                        
+                        ForEach(viewModel.subtitleTracks, id: \.self) { track in
+                            Button {
+                                viewModel.selectSubtitleTrack(track)
+                            } label: {
+                                HStack {
+                                    Text(track.displayName)
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                    if viewModel.selectedSubtitleTrack == track {
+                                        Image(systemName: "checkmark").foregroundColor(Color(hex: "FF007A"))
+                                    }
+                                }
+                                .padding()
+                                .background(Color.white.opacity(0.05))
+                                .cornerRadius(8)
+                            }
+                        }
+                    }
+                }
+                .padding(24)
+            }
+        }
+    }
+}
