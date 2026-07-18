@@ -9,8 +9,28 @@ targets:
     deploymentTarget: "16.0"
     sources:
       - path: TiviOS/Sources
+    info:
+      path: TiviOS/Info.plist
+      properties:
+        CFBundleName: TiviOS
+        CFBundleDisplayName: TiviOS
+        CFBundleIdentifier: com.mustafasadikoglu.TiviOS
+        CFBundleVersion: "1"
+        CFBundleShortVersionString: "1.0.0"
+        CFBundlePackageType: APPL
+        CFBundleExecutable: TiviOS
+        LSRequiresIPhoneOS: true
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
     settings:
       CODE_SIGNING_ALLOWED: false
       CODE_SIGNING_REQUIRED: false
       CODE_SIGN_IDENTITY: ""
       PROVISIONING_PROFILE_SPECIFIER: ""
+      GENERATE_INFOPLIST_FILE: true
+      INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
