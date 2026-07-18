@@ -8,24 +8,27 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: macos-14
+    runs-on: macos-26
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Set Xcode Version to 16.2
-      run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+    - name: Select Xcode 26
+      run: sudo xcode-select -s /Applications/Xcode_26.5.app
 
-    - name: Build Library Package & Test
-      run: |
-        xcodebuild test -scheme TiviOS -destination "platform=iOS Simulator,name=iPhone 16" > test.log 2>&1 || (cat test.log && exit 1)
+    - name: Verify Xcode Version
+      run: xcodebuild -version
 
     - name: Install XcodeGen
       run: brew install xcodegen
 
     - name: Generate Xcode Project
       run: xcodegen generate
+
+    - name: Build & Test on Simulator
+      run: |
+        xcodebuild test -scheme TiviOS -destination "platform=iOS Simulator,name=iPhone 16" > test.log 2>&1 || (cat test.log && exit 1)
 
     - name: Build Unsigned iOS Application IPA
       run: |

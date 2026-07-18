@@ -1,7 +1,6 @@
 name: TiviOS
 options:
   bundleIdPrefix: com.mustafasadikoglu
-  minimumXcodeVersion: "15.0"
 targets:
   TiviOS:
     type: application
