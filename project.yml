@@ -1,0 +1,15 @@
+name: TiviOS
+options:
+  bundleIdPrefix: com.mustafasadikoglu
+targets:
+  TiviOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: TiviOS/Sources
+    settings:
+      CODE_SIGNING_ALLOWED: false
+      CODE_SIGNING_REQUIRED: false
+      CODE_SIGN_IDENTITY: ""
+      PROVISIONING_PROFILE_SPECIFIER: ""
