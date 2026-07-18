@@ -32,7 +32,7 @@ public final class PlaylistListViewModel: ObservableObject {
     private let manageRecentsUseCase: ManageRecentsUseCase
     private let globalSearchUseCase: GlobalSearchUseCase
     
-    // UUID token to track and debounce searches without storing Task properties
+    // UUID token to track and debounce searches
     private var currentSearchId: UUID?
     
     public init(
@@ -51,22 +51,20 @@ public final class PlaylistListViewModel: ObservableObject {
         self.globalSearchUseCase = globalSearchUseCase
     }
     
-    // UUID-token debounced search
-    public func search(query: String, resolution: ResolutionFilter? = nil) {
+    // Pure async debounced search (no escaping closures or Task state)
+    public func search(query: String, resolution: ResolutionFilter? = nil) async {
         let newId = UUID()
         self.currentSearchId = newId
         
         let targetResolution = resolution ?? selectedResolution
         
-        Task {
-            // Debounce for 300ms using nanoseconds for maximum backward compatibility
-            try? await Task.sleep(nanoseconds: 300_000_000)
-            
-            // If the ID has changed, a newer search has been triggered, so exit this one.
-            guard self.currentSearchId == newId else { return }
-            
-            await self.performGlobalSearch(query: query, resolution: targetResolution)
-        }
+        // Debounce for 300ms
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        
+        // If the ID has changed, a newer search has been triggered, so exit this one.
+        guard self.currentSearchId == newId else { return }
+        
+        await self.performGlobalSearch(query: query, resolution: targetResolution)
     }
     
     public func loadPlaylists() async {

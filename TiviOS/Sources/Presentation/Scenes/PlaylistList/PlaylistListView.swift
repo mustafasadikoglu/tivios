@@ -69,7 +69,9 @@ public struct PlaylistListView: View {
                     TextField("Tüm Listelerde Kanal Ara...", text: $viewModel.globalSearchQuery)
                         .foregroundColor(.white)
                         .onChange(of: viewModel.globalSearchQuery) { newValue in
-                            viewModel.search(query: newValue)
+                            Task {
+                                await viewModel.search(query: newValue)
+                            }
                         }
                 }
                 .padding()
@@ -84,7 +86,9 @@ public struct PlaylistListView: View {
                             ForEach(ResolutionFilter.allCases, id: \.self) { res in
                                 Button {
                                     viewModel.selectedResolution = res
-                                    viewModel.search(query: viewModel.globalSearchQuery, resolution: res)
+                                    Task {
+                                        await viewModel.search(query: viewModel.globalSearchQuery, resolution: res)
+                                    }
                                 } label: {
                                     Text(res.rawValue)
                                         .font(.caption)
