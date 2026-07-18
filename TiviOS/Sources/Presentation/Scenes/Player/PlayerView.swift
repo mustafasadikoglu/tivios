@@ -52,7 +52,7 @@ public struct PlayerView: View {
                 VStack {
                     Spacer()
                     if viewModel.showVolumeHUD {
-                        HUDBare(icon: "speaker.wave.3.fill", value: viewModel.volumeLevel, title: "Ses")
+                        HUDBare(icon: "speaker.wave.3.fill", value: CGFloat(viewModel.volumeLevel), title: "Ses")
                     }
                     if viewModel.showBrightnessHUD {
                         HUDBare(icon: "sun.max.fill", value: viewModel.brightnessLevel, title: "Parlaklık")
