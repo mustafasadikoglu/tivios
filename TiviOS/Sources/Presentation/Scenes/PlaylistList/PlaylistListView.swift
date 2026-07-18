@@ -220,3 +220,193 @@ public struct PlaylistListView: View {
         }
     }
 }
+
+// Subview representing a recently watched live channel
+struct RecentChannelCard: View {
+    let channel: Channel
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 6) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white.opacity(0.04))
+                        .frame(width: 100, height: 100)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        )
+                    
+                    if let logoUrl = channel.logoUrl {
+                        AsyncImage(url: logoUrl) { image in
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                        } placeholder: {
+                            Image(systemName: "tv").foregroundColor(.gray)
+                        }
+                        .frame(width: 80, height: 80)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    } else {
+                        Image(systemName: "tv")
+                            .font(.title)
+                            .foregroundColor(.gray)
+                    }
+                }
+                
+                Text(channel.name)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .frame(width: 100)
+            }
+        }
+    }
+}
+
+// Subview card for playlist items on main dashboard
+struct PlaylistCard: View {
+    let playlist: Playlist
+    let onTap: () -> Void
+    let onDelete: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 16) {
+                // Icon / Type indicator
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white.opacity(0.05))
+                        .frame(width: 50, height: 50)
+                    
+                    Image(systemName: playlist.type == .m3u ? "list.bullet.rectangle" : "network")
+                        .font(.title3)
+                        .foregroundColor(Color(hex: "FF007A"))
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(playlist.name)
+                        .font(.body)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    
+                    Text(playlist.type == .m3u ? "M3U Listesi" : "Xtream Codes Api")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
+                Spacer()
+                
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red.opacity(0.8))
+                        .padding(8)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding()
+            .background(Color.white.opacity(0.03))
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.white.opacity(0.05), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// Modal view sheet for adding a new Playlist (supports both M3U URLs and Xtream credentials)
+struct AddPlaylistSheet: View {
+    @ObservedObject var viewModel: PlaylistListViewModel
+    
+    var body: some View {
+        ZStack {
+            Color(hex: "0F0C20").ignoresSafeArea()
+            
+            VStack(spacing: 24) {
+                Text("Yeni Liste Ekle")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                Picker("Tip", selection: $viewModel.addPlaylistType) {
+                    Text("M3U Bağlantısı").tag(PlaylistType.m3u)
+                    Text("Xtream Hesabı").tag(PlaylistType.xtream)
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding(.horizontal)
+                
+                VStack(spacing: 16) {
+                    TextField("Liste Adı", text: $viewModel.newPlaylistName)
+                        .padding()
+                        .background(Color.white.opacity(0.05))
+                        .cornerRadius(10)
+                        .foregroundColor(.white)
+                    
+                    if viewModel.addPlaylistType == .m3u {
+                        TextField("M3U Linki (http...)", text: $viewModel.newPlaylistUrl)
+                            .padding()
+                            .background(Color.white.opacity(0.05))
+                            .cornerRadius(10)
+                            .foregroundColor(.white)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                    } else {
+                        TextField("Sunucu Adresi (http://domain.com:port)", text: $viewModel.xtreamHost)
+                            .padding()
+                            .background(Color.white.opacity(0.05))
+                            .cornerRadius(10)
+                            .foregroundColor(.white)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                        
+                        TextField("Kullanıcı Adı", text: $viewModel.xtreamUsername)
+                            .padding()
+                            .background(Color.white.opacity(0.05))
+                            .cornerRadius(10)
+                            .foregroundColor(.white)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                        
+                        SecureField("Şifre", text: $viewModel.xtreamPassword)
+                            .padding()
+                            .background(Color.white.opacity(0.05))
+                            .cornerRadius(10)
+                            .foregroundColor(.white)
+                    }
+                }
+                .padding(.horizontal)
+                
+                Button {
+                    Task {
+                        await viewModel.addPlaylist()
+                    }
+                } label: {
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else {
+                        Text("Kaydet")
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(
+                                LinearGradient(colors: [Color(hex: "FF007A"), Color(hex: "7928CA")], startPoint: .leading, endPoint: .trailing)
+                            )
+                            .cornerRadius(12)
+                    }
+                }
+                .padding(.horizontal)
+                .disabled(viewModel.isLoading)
+                
+                Spacer()
+            }
+            .padding(.top, 40)
+        }
+    }
+}

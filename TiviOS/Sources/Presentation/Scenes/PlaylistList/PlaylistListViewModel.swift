@@ -49,12 +49,16 @@ public final class PlaylistListViewModel: ObservableObject {
         self.manageRecentsUseCase = manageRecentsUseCase
         self.globalSearchUseCase = globalSearchUseCase
         
-        // Listen to global search changes
-        Publishers.CombineLatest($globalSearchQuery, $selectedResolution)
+        // Listen to global search changes (simplified for robust compiler type-inference)
+        $globalSearchQuery
+            .combineLatest($selectedResolution)
             .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
-            .sink { [weak self] (query, res) in
+            .sink { [weak self] tuple in
+                guard let self = self else { return }
+                let query = tuple.0
+                let res = tuple.1
                 Task {
-                    await self?.performGlobalSearch(query: query, resolution: res)
+                    await self.performGlobalSearch(query: query, resolution: res)
                 }
             }
             .store(in: &cancellables)
