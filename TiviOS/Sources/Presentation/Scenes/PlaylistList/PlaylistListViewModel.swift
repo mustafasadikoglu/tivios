@@ -58,7 +58,7 @@ public final class PlaylistListViewModel: ObservableObject {
         
         searchTask = Task {
             // Sleep for 300ms. If cancelled, this throws CancellationError and exits the task.
-            try await Task.sleep(for: .seconds(0.3))
+            try await Task.sleep(for: .milliseconds(300))
             await self.performGlobalSearch(query: query, resolution: targetResolution)
         }
     }
