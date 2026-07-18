@@ -1,6 +1,27 @@
 import Foundation
 
-public final class EPGParserService: NSObject, EPGServiceProtocol, XMLParserDelegate {
+public final class EPGParserService: EPGServiceProtocol {
+    
+    public init() {}
+    
+    public func fetchEPG(url: URL) async throws -> [EPGProgram] {
+        let (data, _) = try await URLSession.shared.data(from: url)
+        
+        return try await Task.detached(priority: .background) {
+            let helper = EPGParserHelper(data: data)
+            return try helper.parse()
+        }.value
+    }
+    
+    public func getCurrentProgram(for channelId: String, from programs: [EPGProgram]) -> EPGProgram? {
+        let now = Date()
+        return programs.first { $0.channelId == channelId && now >= $0.start && now <= $0.stop }
+    }
+}
+
+// Standalone parser helper to guarantee thread safety in concurrent tasks
+private final class EPGParserHelper: NSObject, XMLParserDelegate {
+    private let data: Data
     private var programs: [EPGProgram] = []
     
     // Parsing state
@@ -17,36 +38,24 @@ public final class EPGParserService: NSObject, EPGServiceProtocol, XMLParserDele
         return formatter
     }()
     
-    public override init() {
+    init(data: Data) {
+        self.data = data
         super.init()
     }
     
-    public func fetchEPG(url: URL) async throws -> [EPGProgram] {
-        let (data, _) = try await URLSession.shared.data(from: url)
-        
-        // XMLParser works on main/background. Let's do it on a background queue
-        return try await Task.detached(priority: .background) { [weak self] in
-            guard let self = self else { return [] }
-            let parser = XMLParser(data: data)
-            parser.delegate = self
-            
-            self.programs.removeAll()
-            if parser.parse() {
-                return self.programs
-            } else {
-                throw parser.parserError ?? NSError(domain: "EPGParserService", code: 500, userInfo: [NSLocalizedDescriptionKey: "EPG XML dosyası ayrıştırılamadı"])
-            }
-        }.value
-    }
-    
-    public func getCurrentProgram(for channelId: String, from programs: [EPGProgram]) -> EPGProgram? {
-        let now = Date()
-        return programs.first { $0.channelId == channelId && now >= $0.start && now <= $0.stop }
+    func parse() throws -> [EPGProgram] {
+        let parser = XMLParser(data: data)
+        parser.delegate = self
+        if parser.parse() {
+            return programs
+        } else {
+            throw parser.parserError ?? NSError(domain: "EPGParserHelper", code: 500, userInfo: [NSLocalizedDescriptionKey: "EPG XML dosyası ayrıştırılamadı"])
+        }
     }
     
     // MARK: - XMLParserDelegate
     
-    public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
         currentElement = elementName
         
         if elementName == "programme" {
@@ -63,7 +72,7 @@ public final class EPGParserService: NSObject, EPGServiceProtocol, XMLParserDele
         }
     }
     
-    public func parser(_ parser: XMLParser, foundCharacters string: String) {
+    func parser(_ parser: XMLParser, foundCharacters string: String) {
         let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty { return }
         
@@ -74,10 +83,9 @@ public final class EPGParserService: NSObject, EPGServiceProtocol, XMLParserDele
         }
     }
     
-    public func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
         if elementName == "programme" {
             if let start = currentStart, let stop = currentStop, !currentChannelId.isEmpty {
-                // Optimize memory: only store programs that are not fully in the past
                 if stop >= Date() {
                     let program = EPGProgram(
                         channelId: currentChannelId,
@@ -89,7 +97,6 @@ public final class EPGParserService: NSObject, EPGServiceProtocol, XMLParserDele
                     programs.append(program)
                 }
             }
-            // Reset
             currentStart = nil
             currentStop = nil
             currentChannelId = ""
