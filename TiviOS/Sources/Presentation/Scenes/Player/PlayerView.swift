@@ -132,11 +132,13 @@ public struct PlayerView: View {
                                 .background(Circle().fill(themeManager.accentColor))
                         }
                         
+                        #if os(iOS)
                         // AirPlay Yansıtma Butonu
                         AirPlayPickerView()
                             .frame(width: 44, height: 44)
                             .background(Circle().fill(Color.black.opacity(0.6)))
                             .clipShape(Circle())
+                        #endif
                     }
                     .padding(.bottom, 20)
                 }

@@ -1,3 +1,4 @@
+#if os(iOS)
 import SwiftUI
 import AVKit
 
@@ -15,3 +16,4 @@ public struct AirPlayPickerView: UIViewRepresentable {
         // No-op
     }
 }
+#endif
