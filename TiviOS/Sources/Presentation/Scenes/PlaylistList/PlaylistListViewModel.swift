@@ -61,7 +61,7 @@ public final class PlaylistListViewModel: ObservableObject {
             try? await Task.sleep(nanoseconds: 300_000_000)
             guard !Task.isCancelled else { return }
             
-            await performGlobalSearch(query: query, resolution: targetResolution)
+            await self.performGlobalSearch(query: query, resolution: targetResolution)
         }
     }
     
