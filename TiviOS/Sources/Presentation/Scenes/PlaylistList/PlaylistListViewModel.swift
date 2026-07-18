@@ -121,7 +121,7 @@ public final class PlaylistListViewModel: ObservableObject {
     
     public func playChannel(_ channel: Channel) async {
         try? await manageRecentsUseCase.saveRecent(channel)
-        recents = try await manageRecentsUseCase.fetchRecents() // Refresh recents bar
+        recents = (try? await manageRecentsUseCase.fetchRecents()) ?? [] // Refresh recents bar
     }
     
     private func performGlobalSearch(query: String, resolution: ResolutionFilter) async {
