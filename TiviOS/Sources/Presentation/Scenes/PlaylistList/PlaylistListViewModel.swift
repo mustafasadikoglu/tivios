@@ -32,7 +32,8 @@ public final class PlaylistListViewModel: ObservableObject {
     private let manageRecentsUseCase: ManageRecentsUseCase
     private let globalSearchUseCase: GlobalSearchUseCase
     
-    private var searchTask: Task<Void, Error>?
+    // UUID token to track and debounce searches without storing Task properties
+    private var currentSearchId: UUID?
     
     public init(
         fetchPlaylistsUseCase: FetchPlaylistsUseCase,
@@ -50,15 +51,20 @@ public final class PlaylistListViewModel: ObservableObject {
         self.globalSearchUseCase = globalSearchUseCase
     }
     
-    // Task-based debouncing method (modern iOS 16 style)
+    // UUID-token debounced search
     public func search(query: String, resolution: ResolutionFilter? = nil) {
-        searchTask?.cancel()
+        let newId = UUID()
+        self.currentSearchId = newId
         
         let targetResolution = resolution ?? selectedResolution
         
-        searchTask = Task {
-            // Sleep for 300ms. If cancelled, this throws CancellationError and exits the task.
-            try await Task.sleep(for: .milliseconds(300))
+        Task {
+            // Debounce for 300ms using nanoseconds for maximum backward compatibility
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            
+            // If the ID has changed, a newer search has been triggered, so exit this one.
+            guard self.currentSearchId == newId else { return }
+            
             await self.performGlobalSearch(query: query, resolution: targetResolution)
         }
     }
