@@ -39,8 +39,20 @@ public final class PlayerViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        let playerItem = AVPlayerItem(url: channel.streamUrl)
+        // Stop any previous player
+        player?.pause()
+        player = nil
+        cancellables.removeAll()
+        
+        // Create asset with custom headers for IPTV server compatibility
+        let headers = ["User-Agent": "TiviOS/1.0"]
+        let asset = AVURLAsset(url: channel.streamUrl, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
+        
+        let playerItem = AVPlayerItem(asset: asset)
+        playerItem.preferredForwardBufferDuration = 5 // Buffer 5 seconds ahead
+        
         let player = AVPlayer(playerItem: playerItem)
+        player.automaticallyWaitsToMinimizeStalling = true
         self.player = player
         
         // Observe loading / playback state
@@ -74,6 +86,16 @@ public final class PlayerViewModel: ObservableObject {
                 self.isPlaying = false
             }
             .store(in: &cancellables)
+        
+        // Timeout: if still loading after 15 seconds, show error
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
+            guard let self = self else { return }
+            if self.isLoading {
+                self.isLoading = false
+                self.errorMessage = "Bağlantı zaman aşımına uğradı. Sunucu yanıt vermiyor."
+            }
+        }
     }
     
     public func togglePlayPause() {
