@@ -44,9 +44,9 @@ public final class PlayerViewModel: ObservableObject {
         player = nil
         cancellables.removeAll()
         
-        // Many IPTV servers block AppleCoreMedia user agents with 403 Permission Denied.
-        // We MUST use a custom User-Agent like VLC to bypass these blocks.
-        let headers = ["User-Agent": "VLC/3.0.0 LibVLC/3.0.0"]
+        // Many IPTV servers block AppleCoreMedia and VLC user agents.
+        // A standard iOS Safari User-Agent is the most universally accepted and avoids 403 blocks.
+        let headers = ["User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1"]
         let asset = AVURLAsset(url: channel.streamUrl, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
         let playerItem = AVPlayerItem(asset: asset)
         playerItem.preferredForwardBufferDuration = 5 // Buffer 5 seconds ahead

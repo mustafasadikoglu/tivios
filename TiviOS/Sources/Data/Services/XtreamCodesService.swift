@@ -110,8 +110,8 @@ public final class XtreamCodesService: XtreamCodesServiceProtocol {
             let streamName = stream.name ?? "Kanal"
             let groupName = categoryMap[stream.category_id?.value ?? ""] ?? "Diğer"
             let iconUrl = stream.stream_icon.flatMap { URL(string: $0) }
-            
-            let streamUrlString = "\(cleanHost)/live/\(username)/\(password)/\(stream.stream_id.value).ts"
+            // Use .m3u8 (HLS) for live streams as AVPlayer handles HLS perfectly but often fails to parse raw .ts over HTTP
+            let streamUrlString = "\(cleanHost)/live/\(username)/\(password)/\(stream.stream_id.value).m3u8"
             guard let streamUrl = URL(string: streamUrlString) else { return nil }
             
             return Channel(
