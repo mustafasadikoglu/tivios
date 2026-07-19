@@ -142,27 +142,43 @@ public final class XtreamCodesService: XtreamCodesServiceProtocol {
         let moviesUrlString = "\(cleanHost)/player_api.php?username=\(username)&password=\(password)&action=get_vod_streams"
         guard let moviesUrl = URL(string: moviesUrlString) else { return [] }
         let (movieData, _) = try await URLSession.shared.data(from: moviesUrl)
-        let rawMovies = (try? JSONDecoder().decode([XtreamMovie].self, from: movieData)) ?? []
         
-        return rawMovies.compactMap { movie in
-            let movieName = movie.name ?? "Film"
-            let groupName = categoryMap[movie.category_id?.value ?? ""] ?? "Film"
-            let iconUrl = movie.stream_icon.flatMap { URL(string: $0) }
-            let ext = movie.container_extension ?? "mp4"
+        // Use JSONSerialization to prevent the entire array from failing if one item is malformed
+        guard let rawArray = (try? JSONSerialization.jsonObject(with: movieData)) as? [[String: Any]] else { return [] }
+        
+        return rawArray.compactMap { dict in
+            // stream_id can be Int or String
+            let streamIdVal = dict["stream_id"]
+            let streamId: String
+            if let idInt = streamIdVal as? Int {
+                streamId = String(idInt)
+            } else if let idStr = streamIdVal as? String {
+                streamId = idStr
+            } else {
+                return nil // stream_id is required
+            }
+            
+            let movieName = (dict["name"] as? String) ?? "Film"
+            let categoryId = String(describing: dict["category_id"] ?? "")
+            let groupName = categoryMap[categoryId] ?? "Film"
+            let iconUrl = (dict["stream_icon"] as? String).flatMap { URL(string: $0) }
+            let ext = (dict["container_extension"] as? String) ?? "mp4"
+            let rating = String(describing: dict["rating"] ?? "")
+            let year = String(describing: dict["year"] ?? "")
             
             // Format: http://host/movie/username/password/stream_id.ext
-            let streamUrlString = "\(cleanHost)/movie/\(username)/\(password)/\(movie.stream_id.value).\(ext)"
+            let streamUrlString = "\(cleanHost)/movie/\(username)/\(password)/\(streamId).\(ext)"
             guard let streamUrl = URL(string: streamUrlString) else { return nil }
             
             return VODMovie(
-                id: String(movie.stream_id.value),
+                id: streamId,
                 playlistId: playlistId,
                 name: movieName,
                 logoUrl: iconUrl,
                 streamUrl: streamUrl,
                 groupTitle: groupName,
-                rating: movie.rating?.value,
-                year: movie.year?.value,
+                rating: rating.isEmpty ? nil : rating,
+                year: year.isEmpty ? nil : year,
                 plot: nil
             )
         }
@@ -184,22 +200,38 @@ public final class XtreamCodesService: XtreamCodesServiceProtocol {
         let seriesUrlString = "\(cleanHost)/player_api.php?username=\(username)&password=\(password)&action=get_series"
         guard let seriesUrl = URL(string: seriesUrlString) else { return [] }
         let (seriesData, _) = try await URLSession.shared.data(from: seriesUrl)
-        let rawSeries = (try? JSONDecoder().decode([XtreamSeries].self, from: seriesData)) ?? []
         
-        return rawSeries.compactMap { series in
-            let seriesName = series.name ?? "Dizi"
-            let groupName = categoryMap[series.category_id?.value ?? ""] ?? "Dizi"
-            let iconUrl = series.cover.flatMap { URL(string: $0) }
+        guard let rawArray = (try? JSONSerialization.jsonObject(with: seriesData)) as? [[String: Any]] else { return [] }
+        
+        return rawArray.compactMap { dict in
+            let seriesIdVal = dict["series_id"]
+            let seriesId: String
+            if let idInt = seriesIdVal as? Int {
+                seriesId = String(idInt)
+            } else if let idStr = seriesIdVal as? String {
+                seriesId = idStr
+            } else {
+                return nil
+            }
+            
+            let seriesName = (dict["name"] as? String) ?? "Dizi"
+            let categoryId = String(describing: dict["category_id"] ?? "")
+            let groupName = categoryMap[categoryId] ?? "Dizi"
+            let iconUrl = (dict["cover"] as? String).flatMap { URL(string: $0) }
+            
+            let rating = String(describing: dict["rating"] ?? "")
+            let releaseDate = String(describing: dict["releaseDate"] ?? "")
+            let plot = dict["plot"] as? String
             
             return VODSeries(
-                id: String(series.series_id.value),
+                id: seriesId,
                 playlistId: playlistId,
                 name: seriesName,
                 logoUrl: iconUrl,
                 groupTitle: groupName,
-                rating: series.rating?.value,
-                year: series.releaseDate,
-                plot: series.plot
+                rating: rating.isEmpty ? nil : rating,
+                year: releaseDate.isEmpty ? nil : releaseDate,
+                plot: plot
             )
         }
     }
