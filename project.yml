@@ -41,5 +41,4 @@ targets:
         CODE_SIGNING_REQUIRED: false
         CODE_SIGN_IDENTITY: ""
         PROVISIONING_PROFILE_SPECIFIER: ""
-        GENERATE_INFOPLIST_FILE: true
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
+        GENERATE_INFOPLIST_FILE: false
