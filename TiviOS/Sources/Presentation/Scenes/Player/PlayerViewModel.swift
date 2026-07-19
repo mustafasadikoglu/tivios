@@ -45,7 +45,8 @@ public final class PlayerViewModel: ObservableObject {
         cancellables.removeAll()
         
         // Create asset with custom headers for IPTV server compatibility
-        let headers = ["User-Agent": "TiviOS/1.0"]
+        // Many IPTV servers block unknown user agents (like TiviOS or AppleCoreMedia) and return 403 Permission Denied.
+        let headers = ["User-Agent": "VLC/3.0.0 LibVLC/3.0.0"]
         let asset = AVURLAsset(url: channel.streamUrl, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
         
         let playerItem = AVPlayerItem(asset: asset)
