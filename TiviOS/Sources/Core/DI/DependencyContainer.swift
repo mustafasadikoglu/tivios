@@ -37,6 +37,7 @@ public final class DependencyContainer: ObservableObject {
         self.addPlaylistUseCase = AddPlaylistUseCase(
             playlistRepository: playlistRepository,
             channelRepository: channelRepository,
+            vodRepository: vodRepository,
             parserService: parserService
         )
         self.addXtreamPlaylistUseCase = AddXtreamPlaylistUseCase(
