@@ -111,7 +111,8 @@ public final class XtreamCodesService: XtreamCodesServiceProtocol {
             let groupName = categoryMap[stream.category_id?.value ?? ""] ?? "Diğer"
             let iconUrl = stream.stream_icon.flatMap { URL(string: $0) }
             
-            let streamUrlString = "\(cleanHost)/live/\(username)/\(password)/\(stream.stream_id.value).ts"
+            // Standard Xtream playback format: http://domain:port/username/password/stream_id
+            let streamUrlString = "\(cleanHost)/\(username)/\(password)/\(stream.stream_id.value)"
             guard let streamUrl = URL(string: streamUrlString) else { return nil }
             
             return Channel(

@@ -28,6 +28,8 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
+          NSAllowsArbitraryLoadsForMedia: true
+          NSAllowsLocalNetworking: true
     settings:
       base:
         IPHONEOS_DEPLOYMENT_TARGET: "16.0"
