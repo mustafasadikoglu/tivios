@@ -111,7 +111,7 @@ public final class XtreamCodesService: XtreamCodesServiceProtocol {
             let groupName = categoryMap[stream.category_id?.value ?? ""] ?? "Diğer"
             let iconUrl = stream.stream_icon.flatMap { URL(string: $0) }
             
-            let streamUrlString = "\(cleanHost)/live/\(username)/\(password)/\(stream.stream_id.value).m3u8"
+            let streamUrlString = "\(cleanHost)/live/\(username)/\(password)/\(stream.stream_id.value).ts"
             guard let streamUrl = URL(string: streamUrlString) else { return nil }
             
             return Channel(
