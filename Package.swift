@@ -1,28 +1,20 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.1
 import PackageDescription
 
 let package = Package(
     name: "TiviOS",
     platforms: [
-        .iOS(.v16),
-        .tvOS(.v16)
+        .iOS(.v16)
     ],
     products: [
         .library(name: "TiviOS", targets: ["TiviOS"])
     ],
-    dependencies: [
-        // Add dependencies here if needed in future
-    ],
+    dependencies: [],
     targets: [
         .target(
             name: "TiviOS",
             path: "TiviOS/Sources",
             exclude: ["TiviOSApp.swift"]
-        ),
-        .testTarget(
-            name: "TiviOSTests",
-            dependencies: ["TiviOS"],
-            path: "TiviOS/Tests"
         )
     ]
 )
