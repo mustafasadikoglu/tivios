@@ -44,8 +44,11 @@ public final class PlayerViewModel: ObservableObject {
         player = nil
         cancellables.removeAll()
         
-        // Use standard URL initialization (AVURLAsset with custom headers sometimes breaks .ts parsing on iOS)
-        let playerItem = AVPlayerItem(url: channel.streamUrl)
+        // Many IPTV servers block AppleCoreMedia user agents with 403 Permission Denied.
+        // We MUST use a custom User-Agent like VLC to bypass these blocks.
+        let headers = ["User-Agent": "VLC/3.0.0 LibVLC/3.0.0"]
+        let asset = AVURLAsset(url: channel.streamUrl, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
+        let playerItem = AVPlayerItem(asset: asset)
         playerItem.preferredForwardBufferDuration = 5 // Buffer 5 seconds ahead
         
         let player = AVPlayer(playerItem: playerItem)
