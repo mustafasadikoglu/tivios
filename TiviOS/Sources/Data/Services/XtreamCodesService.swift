@@ -104,18 +104,36 @@ public final class XtreamCodesService: XtreamCodesServiceProtocol {
         }
         
         let (streamData, _) = try await URLSession.shared.data(from: streamsUrl)
-        let streams = try JSONDecoder().decode([XtreamStream].self, from: streamData)
         
-        return streams.compactMap { stream in
-            let streamName = stream.name ?? "Kanal"
-            let groupName = categoryMap[stream.category_id?.value ?? ""] ?? "Diğer"
-            let iconUrl = stream.stream_icon.flatMap { URL(string: $0) }
+        // Use JSONSerialization to prevent the entire array from failing if one item is malformed
+        guard let rawArray = (try? JSONSerialization.jsonObject(with: streamData)) as? [[String: Any]] else {
+            throw NSError(domain: "XtreamCodesService", code: 500, userInfo: [NSLocalizedDescriptionKey: "Sunucudan gelen yayın listesi okunamadı (Geçersiz format)"])
+        }
+        
+        return rawArray.compactMap { dict in
+            let streamIdVal = dict["stream_id"]
+            let streamId: String
+            if let idInt = streamIdVal as? Int {
+                streamId = String(idInt)
+            } else if let idStr = streamIdVal as? String {
+                streamId = idStr
+            } else {
+                return nil
+            }
+            
+            let streamName = (dict["name"] as? String) ?? "Kanal"
+            let categoryId = String(describing: dict["category_id"] ?? "")
+            let groupName = categoryMap[categoryId] ?? "Diğer"
+            let iconUrl = (dict["stream_icon"] as? String).flatMap { URL(string: $0) }
+            
             // Use .m3u8 (HLS) for live streams as AVPlayer handles HLS perfectly but often fails to parse raw .ts over HTTP
-            let streamUrlString = "\(cleanHost)/live/\(username)/\(password)/\(stream.stream_id.value).m3u8"
+            let streamUrlString = "\(cleanHost)/live/\(username)/\(password)/\(streamId).m3u8"
             guard let streamUrl = URL(string: streamUrlString) else { return nil }
             
+            let epgId = dict["epg_channel_id"] as? String
+            
             return Channel(
-                id: stream.epg_channel_id ?? UUID().uuidString,
+                id: epgId ?? UUID().uuidString,
                 playlistId: playlistId,
                 name: streamName,
                 logoUrl: iconUrl,
