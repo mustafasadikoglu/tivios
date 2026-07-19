@@ -4,37 +4,70 @@ public final class XtreamCodesService: XtreamCodesServiceProtocol {
     
     public init() {}
     
+    // MARK: - Flexible JSON Value (handles Int/String interchangeably)
+    
+    /// Xtream APIs inconsistently return numbers as strings or ints
+    struct FlexibleString: Decodable {
+        let value: String
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            if let intVal = try? container.decode(Int.self) {
+                value = String(intVal)
+            } else if let strVal = try? container.decode(String.self) {
+                value = strVal
+            } else {
+                value = ""
+            }
+        }
+    }
+    
+    struct FlexibleInt: Decodable {
+        let value: Int
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            if let intVal = try? container.decode(Int.self) {
+                value = intVal
+            } else if let strVal = try? container.decode(String.self), let parsed = Int(strVal) {
+                value = parsed
+            } else {
+                value = 0
+            }
+        }
+    }
+    
     // MARK: - API Decodables
     
     struct XtreamCategory: Decodable {
-        let category_id: String
+        let category_id: FlexibleString
         let category_name: String
     }
     
     struct XtreamStream: Decodable {
-        let stream_id: Int
-        let name: String
+        let stream_id: FlexibleInt
+        let name: String?
         let stream_icon: String?
-        let category_id: String
+        let category_id: FlexibleString?
         let epg_channel_id: String?
     }
     
     struct XtreamMovie: Decodable {
-        let stream_id: Int
-        let name: String
+        let stream_id: FlexibleInt
+        let name: String?
         let stream_icon: String?
-        let category_id: String
-        let rating: String?
-        let year: String?
+        let category_id: FlexibleString?
+        let rating: FlexibleString?
+        let year: FlexibleString?
         let container_extension: String?
     }
     
     struct XtreamSeries: Decodable {
-        let series_id: Int
-        let name: String
+        let series_id: FlexibleInt
+        let name: String?
         let cover: String?
-        let category_id: String
-        let rating: String?
+        let category_id: FlexibleString?
+        let rating: FlexibleString?
         let releaseDate: String?
         let plot: String?
     }
@@ -44,11 +77,11 @@ public final class XtreamCodesService: XtreamCodesServiceProtocol {
     }
     
     struct XtreamEpisode: Decodable {
-        let id: String
-        let title: String
+        let id: FlexibleString
+        let title: String?
         let container_extension: String?
-        let season: Int?
-        let episode_num: Int?
+        let season: FlexibleInt?
+        let episode_num: FlexibleInt?
     }
     
     // MARK: - Live Channels
@@ -63,7 +96,7 @@ public final class XtreamCodesService: XtreamCodesServiceProtocol {
         
         let (catData, _) = try await URLSession.shared.data(from: categoryUrl)
         let categories = (try? JSONDecoder().decode([XtreamCategory].self, from: catData)) ?? []
-        let categoryMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.category_id, $0.category_name) })
+        let categoryMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.category_id.value, $0.category_name) })
         
         let streamsUrlString = "\(cleanHost)/player_api.php?username=\(username)&password=\(password)&action=get_live_streams"
         guard let streamsUrl = URL(string: streamsUrlString) else {
@@ -74,16 +107,17 @@ public final class XtreamCodesService: XtreamCodesServiceProtocol {
         let streams = try JSONDecoder().decode([XtreamStream].self, from: streamData)
         
         return streams.compactMap { stream in
-            let groupName = categoryMap[stream.category_id] ?? "Diğer"
+            let streamName = stream.name ?? "Kanal"
+            let groupName = categoryMap[stream.category_id?.value ?? ""] ?? "Diğer"
             let iconUrl = stream.stream_icon.flatMap { URL(string: $0) }
             
-            let streamUrlString = "\(cleanHost)/live/\(username)/\(password)/\(stream.stream_id).m3u8"
+            let streamUrlString = "\(cleanHost)/live/\(username)/\(password)/\(stream.stream_id.value).m3u8"
             guard let streamUrl = URL(string: streamUrlString) else { return nil }
             
             return Channel(
                 id: stream.epg_channel_id ?? UUID().uuidString,
                 playlistId: playlistId,
-                name: stream.name,
+                name: streamName,
                 logoUrl: iconUrl,
                 streamUrl: streamUrl,
                 groupTitle: groupName,
@@ -102,32 +136,33 @@ public final class XtreamCodesService: XtreamCodesServiceProtocol {
         guard let categoryUrl = URL(string: categoryUrlString) else { return [] }
         let (catData, _) = try await URLSession.shared.data(from: categoryUrl)
         let categories = (try? JSONDecoder().decode([XtreamCategory].self, from: catData)) ?? []
-        let categoryMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.category_id, $0.category_name) })
+        let categoryMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.category_id.value, $0.category_name) })
         
         // 2. Fetch Movies
         let moviesUrlString = "\(cleanHost)/player_api.php?username=\(username)&password=\(password)&action=get_vod_streams"
         guard let moviesUrl = URL(string: moviesUrlString) else { return [] }
         let (movieData, _) = try await URLSession.shared.data(from: moviesUrl)
-        let rawMovies = try JSONDecoder().decode([XtreamMovie].self, from: movieData)
+        let rawMovies = (try? JSONDecoder().decode([XtreamMovie].self, from: movieData)) ?? []
         
         return rawMovies.compactMap { movie in
-            let groupName = categoryMap[movie.category_id] ?? "Film"
+            let movieName = movie.name ?? "Film"
+            let groupName = categoryMap[movie.category_id?.value ?? ""] ?? "Film"
             let iconUrl = movie.stream_icon.flatMap { URL(string: $0) }
             let ext = movie.container_extension ?? "mp4"
             
             // Format: http://host/movie/username/password/stream_id.ext
-            let streamUrlString = "\(cleanHost)/movie/\(username)/\(password)/\(movie.stream_id).\(ext)"
+            let streamUrlString = "\(cleanHost)/movie/\(username)/\(password)/\(movie.stream_id.value).\(ext)"
             guard let streamUrl = URL(string: streamUrlString) else { return nil }
             
             return VODMovie(
-                id: String(movie.stream_id),
+                id: String(movie.stream_id.value),
                 playlistId: playlistId,
-                name: movie.name,
+                name: movieName,
                 logoUrl: iconUrl,
                 streamUrl: streamUrl,
                 groupTitle: groupName,
-                rating: movie.rating,
-                year: movie.year,
+                rating: movie.rating?.value,
+                year: movie.year?.value,
                 plot: nil
             )
         }
@@ -143,25 +178,26 @@ public final class XtreamCodesService: XtreamCodesServiceProtocol {
         guard let categoryUrl = URL(string: categoryUrlString) else { return [] }
         let (catData, _) = try await URLSession.shared.data(from: categoryUrl)
         let categories = (try? JSONDecoder().decode([XtreamCategory].self, from: catData)) ?? []
-        let categoryMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.category_id, $0.category_name) })
+        let categoryMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.category_id.value, $0.category_name) })
         
         // 2. Fetch Series
         let seriesUrlString = "\(cleanHost)/player_api.php?username=\(username)&password=\(password)&action=get_series"
         guard let seriesUrl = URL(string: seriesUrlString) else { return [] }
         let (seriesData, _) = try await URLSession.shared.data(from: seriesUrl)
-        let rawSeries = try JSONDecoder().decode([XtreamSeries].self, from: seriesData)
+        let rawSeries = (try? JSONDecoder().decode([XtreamSeries].self, from: seriesData)) ?? []
         
         return rawSeries.compactMap { series in
-            let groupName = categoryMap[series.category_id] ?? "Dizi"
+            let seriesName = series.name ?? "Dizi"
+            let groupName = categoryMap[series.category_id?.value ?? ""] ?? "Dizi"
             let iconUrl = series.cover.flatMap { URL(string: $0) }
             
             return VODSeries(
-                id: String(series.series_id),
+                id: String(series.series_id.value),
                 playlistId: playlistId,
-                name: series.name,
+                name: seriesName,
                 logoUrl: iconUrl,
                 groupTitle: groupName,
-                rating: series.rating,
+                rating: series.rating?.value,
                 year: series.releaseDate,
                 plot: series.plot
             )
@@ -186,17 +222,18 @@ public final class XtreamCodesService: XtreamCodesServiceProtocol {
         for (_, rawEpisodes) in seasonsMap {
             for ep in rawEpisodes {
                 let ext = ep.container_extension ?? "mp4"
+                let epTitle = ep.title ?? "Bölüm \(ep.episode_num?.value ?? 0)"
                 
                 // Format: http://host/series/username/password/id.ext
-                let streamUrlString = "\(cleanHost)/series/\(username)/\(password)/\(ep.id).\(ext)"
+                let streamUrlString = "\(cleanHost)/series/\(username)/\(password)/\(ep.id.value).\(ext)"
                 guard let streamUrl = URL(string: streamUrlString) else { continue }
                 
                 let episode = VODEpisode(
-                    id: ep.id,
-                    name: ep.title,
+                    id: ep.id.value,
+                    name: epTitle,
                     streamUrl: streamUrl,
-                    season: ep.season ?? 1,
-                    episode: ep.episode_num ?? 1
+                    season: ep.season?.value ?? 1,
+                    episode: ep.episode_num?.value ?? 1
                 )
                 episodes.append(episode)
             }

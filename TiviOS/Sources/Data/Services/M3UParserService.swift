@@ -99,7 +99,7 @@ public final class M3UParserService: M3UParserServiceProtocol {
     public func parseClassified(content: String, playlistId: UUID) throws -> M3UParseResult {
         var channels: [Channel] = []
         var movies: [VODMovie] = []
-        var seriesMap: [String: VODSeries] = [:] // Group series by group name to avoid duplicates
+        var seriesList: [VODSeries] = []
         
         let lines = content.components(separatedBy: .newlines)
         
@@ -154,8 +154,9 @@ public final class M3UParserService: M3UParserServiceProtocol {
                     movies.append(movie)
                     
                 case .series:
-                    // For M3U, each series entry is treated as a movie-like VOD
-                    // because M3U doesn't have episode structure like Xtream
+                    // M3U series entries: each episode is a separate VODMovie shown under Filmler
+                    // because M3U doesn't have Xtream-like season/episode structure.
+                    // We still categorize as movie but keep the series group title.
                     let movie = VODMovie(
                         id: UUID().uuidString,
                         playlistId: playlistId,
@@ -176,7 +177,7 @@ public final class M3UParserService: M3UParserServiceProtocol {
         return M3UParseResult(
             channels: channels,
             movies: movies,
-            series: Array(seriesMap.values)
+            series: seriesList
         )
     }
     
