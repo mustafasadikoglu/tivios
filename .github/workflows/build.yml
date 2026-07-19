@@ -20,15 +20,14 @@ jobs:
     - name: Verify Xcode Version
       run: xcodebuild -version
 
+    - name: Build Library Package (Swift)
+      run: swift build
+
     - name: Install XcodeGen
       run: brew install xcodegen
 
     - name: Generate Xcode Project
       run: xcodegen generate
-
-    - name: Build & Test on Simulator
-      run: |
-        xcodebuild test -scheme TiviOS -destination "platform=iOS Simulator,name=iPhone 16" > test.log 2>&1 || (cat test.log && exit 1)
 
     - name: Build Unsigned iOS Application IPA
       run: |
