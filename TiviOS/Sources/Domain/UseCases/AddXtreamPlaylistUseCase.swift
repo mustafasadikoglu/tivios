@@ -26,6 +26,11 @@ public final class AddXtreamPlaylistUseCase {
             throw NSError(domain: "AddXtreamPlaylistUseCase", code: 400, userInfo: [NSLocalizedDescriptionKey: "Eksik hesap bilgileri girdiniz"])
         }
         
+        var cleanHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !cleanHost.hasPrefix("http://") && !cleanHost.hasPrefix("https://") {
+            cleanHost = "http://" + cleanHost
+        }
+        
         let playlistId = UUID()
         let playlist = Playlist(
             id: playlistId,
@@ -33,20 +38,20 @@ public final class AddXtreamPlaylistUseCase {
             type: .xtream,
             xtreamUsername: username,
             xtreamPassword: password,
-            xtreamHost: host
+            xtreamHost: cleanHost
         )
         
         // 1. Fetch live channels
         let channels = try await xtreamService.fetchChannels(
-            host: host,
+            host: cleanHost,
             username: username,
             password: password,
             playlistId: playlistId
         )
         
         // 2. Fetch movies & series (VOD)
-        let movies = (try? await xtreamService.fetchMovies(host: host, username: username, password: password, playlistId: playlistId)) ?? []
-        let series = (try? await xtreamService.fetchSeries(host: host, username: username, password: password, playlistId: playlistId)) ?? []
+        let movies = (try? await xtreamService.fetchMovies(host: cleanHost, username: username, password: password, playlistId: playlistId)) ?? []
+        let series = (try? await xtreamService.fetchSeries(host: cleanHost, username: username, password: password, playlistId: playlistId)) ?? []
         
         // 3. Save
         try await playlistRepository.addPlaylist(playlist)
