@@ -20,9 +20,6 @@ jobs:
     - name: Verify Xcode Version
       run: xcodebuild -version
 
-    - name: Build Library Package (Swift)
-      run: swift build
-
     - name: Install XcodeGen
       run: brew install xcodegen
 

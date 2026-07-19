@@ -99,7 +99,7 @@ public final class M3UParserService: M3UParserServiceProtocol {
     public func parseClassified(content: String, playlistId: UUID) throws -> M3UParseResult {
         var channels: [Channel] = []
         var movies: [VODMovie] = []
-        var seriesMap: [String: VODSeries] = [] // Group series by group name to avoid duplicates
+        var seriesMap: [String: VODSeries] = [:] // Group series by group name to avoid duplicates
         
         let lines = content.components(separatedBy: .newlines)
         
